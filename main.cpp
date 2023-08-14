@@ -21,6 +21,7 @@ int main(void){
     std::string exitString;
     std::cout << "Press Enter to Exit ";
     std::cin >> exitString;
+    return 0;
 
 }
 
