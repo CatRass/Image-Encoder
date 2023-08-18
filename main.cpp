@@ -5,6 +5,7 @@
 std::string getFileFormat(std::string& fileName);
 std::string getFileName(std::string& fileName);
 void encode(std::string& fileName, std::string& textForEncoding);
+void xorEncrypt(std::string& inputString, std::string key);
 
 int main(void){
 
@@ -48,6 +49,7 @@ void encode(std::string& fileName, std::string& textForEncoding){
         encryptionLocation = 9;
     }
 
+    xorEncrypt(textForEncoding,"Key Here");
     for(char inputChar: textForEncoding){
         fileVec.insert(fileVec.end()-encryptionLocation,inputChar);
     }
@@ -56,6 +58,18 @@ void encode(std::string& fileName, std::string& textForEncoding){
     outFS.open(outputFile,std::ios::binary);
     for(char byte:fileVec){
         outFS << byte;
+    }
+}
+
+void xorEncrypt(std::string& inputString, std::string key){
+    unsigned int keyIndex = 0;
+    for(unsigned int i=0; i<inputString.size(); i++){
+        inputString.at(i) = key.at(keyIndex) ^ inputString.at(i);
+        if(keyIndex == key.size()-1){
+            keyIndex = 0;
+        } else {
+            keyIndex++;
+        }
     }
 }
 
