@@ -13,7 +13,7 @@ int main(void){
     char inputChoice;
     std::string emptyInput;
     std::cout << "What would you like to do?" << std::endl;
-    std::cout << "[1] Encode" << std::endl << "[2] Decode" << std::endl << "Option: ";
+    std::cout << "\t[1] Encode" << std::endl << "\t[2] Decode" << std::endl << "Option: ";
     std::cin >> inputChoice;
     std::getline(std::cin,emptyInput);
 
@@ -39,17 +39,13 @@ int main(void){
             std::cout << decodeText << std::endl;
             break;
         default:
-            std::cout << "Unknown option. kys.";
-            return -1;
+            std::cout << "Unknown option." << std::endl;
+            break;
     }
 
-
-
-    
     std::string exitString;
     std::cout << "Press Enter to Exit ";
     std::cin >> exitString;
-       
 
     return 0;
 
@@ -64,33 +60,35 @@ void encode(std::string& fileName, std::string& textForEncoding, std::string& en
 
     inFS.open(fileName, std::ios::binary);
 
-    while(!inFS.eof()){
-        char text;
-        text = inFS.get();
-        fileVec.push_back(text);
-    }
+    if(!inFS.fail()){
+        while(!inFS.eof()){
+            char text;
+            text = inFS.get();
+            fileVec.push_back(text);
+        }
 
-    int encryptionLocation;
-    std::string fileFormat = getFileFormat(fileName);
-    outputFile.append(fileFormat);
-    if(fileFormat == "jpg"){
-        encryptionLocation = 0;
-    } else if (fileFormat == "png") {
-        encryptionLocation = 9;
-    }
+        int encryptionLocation;
+        std::string fileFormat = getFileFormat(fileName);
+        outputFile.append(fileFormat);
+        if(fileFormat == "jpg"){
+            encryptionLocation = 0;
+        } else if (fileFormat == "png") {
+            encryptionLocation = 9;
+        }
 
-    xorEncrypt(textForEncoding,encodeKey);
-    // std::cout << "Encoded text: " << textForEncoding << std::endl;
-    for(char inputChar: textForEncoding){
-        fileVec.insert(fileVec.end()-encryptionLocation,inputChar);
-    }
-    // fileVec.insert(fileVec.end()-encryptionLocation,'/');
-    fileVec.insert(fileVec.end()-encryptionLocation,textLen);
+        xorEncrypt(textForEncoding,encodeKey);
+        for(char inputChar: textForEncoding){
+            fileVec.insert(fileVec.end()-encryptionLocation,inputChar);
+        }
+        fileVec.insert(fileVec.end()-encryptionLocation,textLen);
 
-    
-    outFS.open(outputFile,std::ios::binary);
-    for(char byte:fileVec){
-        outFS << byte;
+        
+        outFS.open(outputFile,std::ios::binary);
+        for(char byte:fileVec){
+            outFS << byte;
+        }
+    } else {
+        std::cout << "Failure: Something went wrong" << std::endl;
     }
 }
 std::string decode(std::string fileName, std::string keyForDecoding){
@@ -99,20 +97,24 @@ std::string decode(std::string fileName, std::string keyForDecoding){
     std::string resultString;
     inFS.open(fileName, std::ios::binary);
 
-    while(!inFS.eof()){
-        char text;
-        text = inFS.get();
-        fileString.push_back(text);
+    if(!inFS.fail()){
+        while(!inFS.eof()){
+            char text;
+            text = inFS.get();
+            fileString.push_back(text);
+        }
+
+        unsigned int numChars = fileString.at(fileString.size()-11) + 11;
+
+        for(unsigned int i=numChars; i>11; i--){
+            resultString += fileString.at(fileString.size()-i);
+        }
+        
+        xorEncrypt(resultString,keyForDecoding);
+    } else {
+        resultString = "Failure: Something went wrong";
     }
 
-    unsigned int numChars = fileString.at(fileString.size()-11) + 11;
-
-    for(unsigned int i=numChars; i>11; i--){
-        resultString += fileString.at(fileString.size()-i);
-    }
-    
-    // xorEncrypt(resultString,keyForDecoding);
-    xorEncrypt(resultString,keyForDecoding);
     return resultString;
 
 }
@@ -139,7 +141,6 @@ std::string getFileFormat(std::string& fileName){
     return fileFormat;
 
 }
-
 std::string getFileName(std::string& fileName){
     int lastDotIndex = fileName.find_last_of('.');
     std::string fileNameReturn = fileName.substr(0,lastDotIndex);
