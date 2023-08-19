@@ -55,10 +55,10 @@ void encode(std::string& fileName, std::string& textForEncoding, std::string& en
     std::ifstream inFS;
     std::ofstream outFS;
     std::vector<char> fileVec;
-    std::string outputFile = "Output.";
+    std::string outputFile = "Output.";                                             // Output file will be saved to Output.FORMAT
     unsigned int textLen = textForEncoding.size();
 
-    inFS.open(fileName, std::ios::binary);
+    inFS.open(fileName, std::ios::binary);                                          // Opens the file in binary mode so the bytes can be read properly
 
     if(!inFS.fail()){
         while(!inFS.eof()){
@@ -70,20 +70,22 @@ void encode(std::string& fileName, std::string& textForEncoding, std::string& en
         int encryptionLocation;
         std::string fileFormat = getFileFormat(fileName);
         outputFile.append(fileFormat);
-        if(fileFormat == "jpg"){
-            encryptionLocation = 0;
-        } else if (fileFormat == "png") {
-            encryptionLocation = 9;
+        if(fileFormat == "jpg"){                                                    
+            encryptionLocation = 0;                                                 // As different files have different structures, the text has to be placed in different locations as
+        } else if (fileFormat == "png") {                                           // to not corrupt the file.
+            encryptionLocation = 9;                                                 // This whole block of code is used to determine where in the output file the text will be placed.    
         }
 
         xorEncrypt(textForEncoding,encodeKey);
+
         for(char inputChar: textForEncoding){
             fileVec.insert(fileVec.end()-encryptionLocation,inputChar);
         }
-        fileVec.insert(fileVec.end()-encryptionLocation,textLen);
+        fileVec.insert(fileVec.end()-encryptionLocation,textLen);                   // To properly decrypt later, we store the length of the encrypted text
+                                                                                    // TODO: Create a proper structure to encrypted text, as opposed to just shoving a number at the end of the encrypted text and calling it a day
 
         
-        outFS.open(outputFile,std::ios::binary);
+        outFS.open(outputFile,std::ios::binary);                                    // Opens the file in binary mode so the bytes can be read properly
         for(char byte:fileVec){
             outFS << byte;
         }
@@ -103,14 +105,14 @@ std::string decode(std::string fileName, std::string keyForDecoding){
             text = inFS.get();
             fileString.push_back(text);
         }
-
-        unsigned int numChars = fileString.at(fileString.size()-11) + 11;
+                                                                                            // Currently decoding only works for .PNG files.
+        unsigned int numChars = fileString.at(fileString.size()-11) + 11;                   // TODO: Implement this for any file, not just .PNG
 
         for(unsigned int i=numChars; i>11; i--){
             resultString += fileString.at(fileString.size()-i);
         }
         
-        xorEncrypt(resultString,keyForDecoding);
+        xorEncrypt(resultString,keyForDecoding);                                            // XOR encryption, just like XOR operations are symmetric, but also reversible
     } else {
         resultString = "Failure: Something went wrong";
     }
