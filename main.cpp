@@ -29,6 +29,7 @@ int main(void){
             std::cout << "What key would you like to use: ";
             getline(std::cin,encodeKey);
             encode(encodeFile,encodeText, encodeKey);
+            std::cout << "Text encoded as: " << encodeText << std::endl;
             break;
         case('2'):
             std::cout << "What file would you like to decode: ";
@@ -67,13 +68,15 @@ void encode(std::string& fileName, std::string& textForEncoding, std::string& en
             fileVec.push_back(text);
         }
 
-        int encryptionLocation;
+        int encryptionLocation, trim;
         std::string fileFormat = getFileFormat(fileName);
         outputFile.append(fileFormat);
         if(fileFormat == "jpg"){                                                    
             encryptionLocation = 0;                                                 // As different files have different structures, the text has to be placed in different locations as
+            trim = 0;
         } else if (fileFormat == "png") {                                           // to not corrupt the file.
             encryptionLocation = 9;                                                 // This whole block of code is used to determine where in the output file the text will be placed.    
+            trim = 5;
         }
 
         xorEncrypt(textForEncoding,encodeKey);
@@ -81,12 +84,16 @@ void encode(std::string& fileName, std::string& textForEncoding, std::string& en
         for(char inputChar: textForEncoding){
             fileVec.insert(fileVec.end()-encryptionLocation,inputChar);
         }
+
         fileVec.insert(fileVec.end()-encryptionLocation,textLen);                   // To properly decrypt later, we store the length of the encrypted text
                                                                                     // TODO: Create a proper structure to encrypted text, as opposed to just shoving a number at the end of the encrypted text and calling it a day
-
-        
+ 
         outFS.open(outputFile,std::ios::binary);                                    // Opens the file in binary mode so the bytes can be read properly
-        for(char byte:fileVec){
+        // for(char byte:fileVec){
+        //     outFS << byte;
+        // }
+        for(unsigned int i=0; i<fileVec.size()-trim; i++){
+            char byte = fileVec.at(i);
             outFS << byte;
         }
     } else {
@@ -103,13 +110,15 @@ std::string decode(std::string fileName, std::string keyForDecoding){
         while(!inFS.eof()){
             char text;
             text = inFS.get();
+            // std::cout << "At Char: " << text <<std::endl;
             fileString.push_back(text);
         }
                                                                                             // Currently decoding only works for .PNG files.
-        unsigned int numChars = fileString.at(fileString.size()-11) + 11;                   // TODO: Implement this for any file, not just .PNG
+        unsigned int numChars = fileString.at(fileString.size()-6);                   // TODO: Implement this for any file, not just .PNG
+        std::cout << "Length of decode string is: " << numChars << std::endl;
 
-        for(unsigned int i=numChars; i>11; i--){
-            resultString += fileString.at(fileString.size()-i);
+        for(unsigned int i=numChars; i>0; i--){
+            resultString += fileString.at(fileString.size()-i-6);
         }
         
         xorEncrypt(resultString,keyForDecoding);                                            // XOR encryption, just like XOR operations are symmetric, but also reversible
