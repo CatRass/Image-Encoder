@@ -1,159 +1,222 @@
 #include <iostream>
-#include <fstream>
-#include <vector>
+#include <conio.h>
 
-std::string getFileFormat(std::string& fileName);
-std::string getFileName(std::string& fileName);
-void encode(std::string& fileName, std::string& textForEncoding, std::string& encodeKey);
-std::string decode(std::string fileName, std::string keyForDecoding);
-void xorEncrypt(std::string& inputString, std::string key);
+#include "objs/file.hpp"
+#include "objs/algorithms.hpp"
+#include "menu.hpp"
+
+#define clearCon system("cls")
+
+// Menu option macros
+
+// Encoding Menu
+#define MENU_ENC    1
+// Decoding Menu
+#define MENU_DEC    2
+// Change the file we're working with
+#define MENU_FILE   3
+// Exit
+#define EX          0
+// Return to Main Menu
+#define RETURN_MM clearCon; menuOption = -1; mainMenu(menuOption);
+
+
+// Cipher options
+
+// Simple Caesar Cipher
+#define SIM_CAES    1
+#define SIM_XOR     2
+
+std::string getExtension(std::string);
+bool isValidFile(std::string);
+void operator <<(std::ostream& lhs, std::deque<char>& rhs);
+bool setWorkingFile(File* workingFile, std::string &fileExtension);
 
 int main(void){
 
-    char inputChoice;
-    std::string emptyInput;
-    std::cout << "What would you like to do?" << std::endl;
-    std::cout << "\t[1] Encode" << std::endl << "\t[2] Decode" << std::endl << "Option: ";
-    std::cin >> inputChoice;
-    std::getline(std::cin,emptyInput);
+    int menuOption;
+    File* workingFile = nullptr;
+    EncryptedFile* outputFile = nullptr;
+    std::string fileExtension;
 
-    std::string encodeText, encodeFile, encodedFile, encodeKey;
-    std::string decodeText, decodeFile, decodeKey;
+    // if(!setWorkingFile(workingFile, fileExtension)){
+    //     return 0;
+    // }
 
-    switch(inputChoice){
-        case('1'):
-            std::cout << "What file would you like to encode: ";
-            getline(std::cin,encodeFile);
-            std::cout << "What text would you like to encode: ";
-            getline(std::cin,encodeText);
-            std::cout << "What key would you like to use: ";
-            getline(std::cin,encodeKey);
-            encode(encodeFile,encodeText, encodeKey);
-            std::cout << "Text encoded as: " << encodeText << std::endl;
-            break;
-        case('2'):
-            std::cout << "What file would you like to decode: ";
-            getline(std::cin,decodeFile);
-            std::cout << "What was the key used to encode: ";
-            getline(std::cin,decodeKey);
-            decodeText = decode(decodeFile,decodeKey);
-            std::cout << decodeText << std::endl;
-            break;
-        default:
-            std::cout << "Unknown option." << std::endl;
-            break;
+    std::string file;
+
+    std::cout << "What file will we be working with?" << std::endl;
+    std::getline(std::cin, file);
+    fileExtension = getExtension(file);
+    
+    if(!isValidFile(file)){
+        std::cout << "Error: Invalid File" << std::endl;
+        return 0;
     }
 
-    std::string exitString;
-    std::cout << "Press Enter to Exit ";
-    std::cin >> exitString;
-
-    return 0;
-
-}
-
-void encode(std::string& fileName, std::string& textForEncoding, std::string& encodeKey){
-    std::ifstream inFS;
-    std::ofstream outFS;
-    std::vector<char> fileVec;
-    std::string outputFile = "Output.";                                             // Output file will be saved to Output.FORMAT
-    unsigned int textLen = textForEncoding.size();
-
-    inFS.open(fileName, std::ios::binary);                                          // Opens the file in binary mode so the bytes can be read properly
-
-    if(!inFS.fail()){
-        while(!inFS.eof()){
-            char text;
-            text = inFS.get();
-            fileVec.push_back(text);
-        }
-
-        int encryptionLocation, trim;
-        std::string fileFormat = getFileFormat(fileName);
-        outputFile.append(fileFormat);
-        if(fileFormat == "jpg"){                                                    
-            encryptionLocation = 0;                                                 // As different files have different structures, the text has to be placed in different locations as
-            trim = 0;
-        } else if (fileFormat == "png") {                                           // to not corrupt the file.
-            encryptionLocation = 9;                                                 // This whole block of code is used to determine where in the output file the text will be placed.    
-            trim = 5;
-        }
-
-        xorEncrypt(textForEncoding,encodeKey);
-
-        for(char inputChar: textForEncoding){
-            fileVec.insert(fileVec.end()-encryptionLocation,inputChar);
-        }
-
-        fileVec.insert(fileVec.end()-encryptionLocation,textLen);                   // To properly decrypt later, we store the length of the encrypted text
-                                                                                    // TODO: Create a proper structure to encrypted text, as opposed to just shoving a number at the end of the encrypted text and calling it a day
- 
-        outFS.open(outputFile,std::ios::binary);                                    // Opens the file in binary mode so the bytes can be read properly
-        // for(char byte:fileVec){
-        //     outFS << byte;
-        // }
-        for(unsigned int i=0; i<fileVec.size()-trim; i++){
-            char byte = fileVec.at(i);
-            outFS << byte;
-        }
+    if(fileExtension == "png"){
+        workingFile = new PNG(file);
     } else {
-        std::cout << "Failure: Something went wrong" << std::endl;
-    }
-}
-std::string decode(std::string fileName, std::string keyForDecoding){
-    std::ifstream inFS;
-    std::vector<char> fileString;
-    std::string resultString;
-    inFS.open(fileName, std::ios::binary);
-
-    if(!inFS.fail()){
-        while(!inFS.eof()){
-            char text;
-            text = inFS.get();
-            // std::cout << "At Char: " << text <<std::endl;
-            fileString.push_back(text);
-        }
-                                                                                            // Currently decoding only works for .PNG files.
-        unsigned int numChars = fileString.at(fileString.size()-6);                   // TODO: Implement this for any file, not just .PNG
-        std::cout << "Length of decode string is: " << numChars << std::endl;
-
-        for(unsigned int i=numChars; i>0; i--){
-            resultString += fileString.at(fileString.size()-i-6);
-        }
-        
-        xorEncrypt(resultString,keyForDecoding);                                            // XOR encryption, just like XOR operations are symmetric, but also reversible
-    } else {
-        resultString = "Failure: Something went wrong";
+        std::cout << "Extension not currently supported." << std::endl;
+        return 0;
     }
 
-    return resultString;
+    std::cout << workingFile->getStart();
 
-}
+    clearCon;
+    mainMenu(menuOption);
+    clearCon;
 
-void xorEncrypt(std::string& inputString, std::string key){
-    unsigned int keyIndex = 0;
-    for(unsigned int i=0; i<inputString.size(); i++){
-        inputString.at(i) = key.at(keyIndex) ^ inputString.at(i);
-        if(keyIndex == key.size()-1){
-            keyIndex = 0;
+    while(menuOption != EX){
+
+        if(menuOption == MENU_ENC){                                                 // Encoding Menu
+            encryptMenu();
+            int encrOption;
+            std::cin >> encrOption;
+            std::cin.ignore(1000, '\n');
+
+            if(encrOption == SIM_CAES){              
+                std::string message;
+                std::cout << "--Encrypting with Simple Caesers--" << std::endl;
+
+                std::cout << "What would you like to encrypt?" << std::endl;
+                std::getline(std::cin, message);
+
+                std::deque<char> outputMessage = simpleCaesar(message);
+
+                outputFile = new EncryptedFile(fileExtension,outputMessage);
+                // std::deque<char> testMessage = {'t','e','s','t'};
+                // EncryptedFile testFile("png",testMessage);
+                *outputFile << *workingFile;
+                
+            } else if (encrOption == SIM_XOR){
+                std::string message;
+                std::string key;
+
+                std::cout << "--Encrypting with Simple XOR--" << std::endl;
+
+                std::cout << "What would you like to encrypt?" << std::endl;
+                std::getline(std::cin, message);
+                std::cout << "What is your key?" << std::endl;
+                std::getline(std::cin, key);
+
+                std::deque<char> outputMessage = simpleXor(message,key);
+
+                outputFile = new EncryptedFile(fileExtension,outputMessage);
+                *outputFile << *workingFile;
+
+            } else if (encrOption == EX) {
+                RETURN_MM
+            } else {
+                std::cout << "Error: Invalid option" << std::endl;
+            }
+            std::cout << std::endl;
+
+        } else if (menuOption == MENU_DEC){                                         // Decoding Menu
+            decryptMenu();
+            int decrOption;
+            std::cin >> decrOption;
+            std::cin.ignore(1000, '\n');
+
+            if(decrOption == SIM_CAES){
+                std::cout << "--Decrypting with Simple Caesers--" << std::endl;
+                std::string message = workingFile->getMessage();
+                std::deque<char> decryptedMsg = simpleCaesar(message, true);
+                std::cout << decryptedMsg;
+
+            } else if (decrOption == SIM_XOR){
+                std::string key;
+
+                std::cout << "--Decrypting with Simple XOR--" << std::endl;
+                
+                std::string message = workingFile->getMessage();
+
+                std::cout << "What is your key?" << std::endl;
+                std::getline(std::cin, key);
+
+                std::deque<char> decryptedMsg = simpleXor(message,key);
+
+                std::cout << decryptedMsg;
+
+            } else if (decrOption == EX) {
+                RETURN_MM
+            } else {
+                std::cout << "Error: Invalid option" << std::endl;
+            }
+            std::cout << std::endl;
+        } else if(menuOption == MENU_FILE){                                         // Change the current working file
+                std::cin.ignore(1000, '\n');
+                // if(!setWorkingFile(workingFile, fileExtension)){
+                //     return 0;
+                // }
+                std::cout << "What file will we be working with?" << std::endl;
+                std::getline(std::cin, file);
+                fileExtension = getExtension(file);
+                
+                if(!isValidFile(file)){
+                    std::cout << "Error: Invalid File" << std::endl;
+                    return 0;
+                }
+
+                if(fileExtension == "png"){
+                    workingFile = new PNG(file);
+                } else {
+                    std::cout << "Extension not currently supported." << std::endl;
+                    return 0;
+                }
+                RETURN_MM
+        } else if (menuOption == EX){
+            clearCon;
+            mainMenu(menuOption);
         } else {
-            keyIndex++;
+            std::cout << "Error: Not a valid entry" << std::endl;
+            mainMenu(menuOption);
         }
+    }
+
+    clearCon;
+    return EXIT_SUCCESS;
+}
+
+std::string getExtension(std::string fileName){
+    unsigned int extensionStart = fileName.find_last_of('.') + 1;
+    std::string extension = fileName.substr(extensionStart);
+    return extension;
+}
+
+bool isValidFile(std::string fileName){
+    std::ifstream inFS;
+
+    inFS.open(fileName);
+    bool valid = inFS.good();
+    inFS.close();
+    return valid;
+}
+
+void operator <<(std::ostream& lhs, std::deque<char>& rhs){
+    for(unsigned int i=0; i<rhs.size(); i++){
+        lhs << rhs.at(i);
     }
 }
 
-std::string getFileFormat(std::string& fileName){
-    std::string fileFormat = "";
+bool setWorkingFile(File* workingFile, std::string &fileExtension){
+    std::string file;
 
-    fileFormat.push_back(fileName.at(fileName.size()-3));
-    fileFormat.push_back(fileName.at(fileName.size()-2));
-    fileFormat.push_back(fileName.at(fileName.size()-1));
+    std::cout << "What file will we be working with?" << std::endl;
+    std::getline(std::cin, file);
+    fileExtension = getExtension(file);
+    
+    if(!isValidFile(file)){
+        std::cout << "Error: Invalid File" << std::endl;
+        return false;
+    }
 
-    return fileFormat;
+    if(fileExtension == "png"){
+        workingFile = new PNG(file);
+    } else {
+        std::cout << "Extension not currently supported." << std::endl;
+        return false;
+    }
 
-}
-std::string getFileName(std::string& fileName){
-    int lastDotIndex = fileName.find_last_of('.');
-    std::string fileNameReturn = fileName.substr(0,lastDotIndex);
-    return fileNameReturn;
+    return true;
 }
