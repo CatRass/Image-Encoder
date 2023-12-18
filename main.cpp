@@ -27,7 +27,15 @@
 #define SIM_CAES    1
 #define SIM_XOR     2
 
+/**
+ * Gets the file extension for a given file name
+ * @param fileName: Name of the file
+ * @returns String of the file extension, without the '.'
+*/
 std::string getExtension(std::string);
+/**
+ * 
+*/
 bool isValidFile(std::string);
 void operator <<(std::ostream& lhs, std::deque<char>& rhs);
 bool setWorkingFile(File* workingFile, std::string &fileExtension);
@@ -82,7 +90,7 @@ int main(void){
                 std::cout << "What would you like to encrypt?" << std::endl;
                 std::getline(std::cin, message);
 
-                std::deque<char> outputMessage = simpleCaesar(message);
+                std::deque<char> outputMessage = algorithms::simpleCaesar(message);
 
                 outputFile = new EncryptedFile(fileExtension,outputMessage);
                 // std::deque<char> testMessage = {'t','e','s','t'};
@@ -100,7 +108,7 @@ int main(void){
                 std::cout << "What is your key?" << std::endl;
                 std::getline(std::cin, key);
 
-                std::deque<char> outputMessage = simpleXor(message,key);
+                std::deque<char> outputMessage = algorithms::simpleXor(message,key);
 
                 outputFile = new EncryptedFile(fileExtension,outputMessage);
                 *outputFile << *workingFile;
@@ -121,7 +129,7 @@ int main(void){
             if(decrOption == SIM_CAES){
                 std::cout << "--Decrypting with Simple Caesers--" << std::endl;
                 std::string message = workingFile->getMessage();
-                std::deque<char> decryptedMsg = simpleCaesar(message, true);
+                std::deque<char> decryptedMsg = algorithms::simpleCaesar(message, true);
                 std::cout << decryptedMsg;
 
             } else if (decrOption == SIM_XOR){
@@ -134,7 +142,7 @@ int main(void){
                 std::cout << "What is your key?" << std::endl;
                 std::getline(std::cin, key);
 
-                std::deque<char> decryptedMsg = simpleXor(message,key);
+                std::deque<char> decryptedMsg = algorithms::simpleXor(message,key);
 
                 std::cout << decryptedMsg;
 

@@ -15,18 +15,31 @@ class File {
 
     public:
 
+        /**
+         * @returns The files start value in char form.
+        */
         char getStart() const {
             return this->start;
         }
 
+        /**
+         * @returns The files size, in the number of chars in the file
+        */
         unsigned int getFileSize() const {
             return this->fileContents.size();
         }
 
-        char copyFileContents(unsigned int index){
+        /**
+         * @param index: The index that you wish to copy
+         * @returns The value at the specified index
+        */
+        char copyFileContents(unsigned int index) const {
             return this->fileContents.at(index);
         }
 
+        /**
+         * @returns The message in a file
+        */
         std::string getMessage(){
             std::string imageMessage;
             for(int i=0; i<(int)MSG_LEN; i++){
