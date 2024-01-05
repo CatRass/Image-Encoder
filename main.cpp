@@ -64,6 +64,8 @@ int main(void){
 
     if(fileExtension == "png"){
         workingFile = new PNG(file);
+    } else if(fileExtension == "jpg"){
+        workingFile = new JPG(file);
     } else {
         std::cout << "Extension not currently supported." << std::endl;
         return 0;
@@ -168,6 +170,8 @@ int main(void){
 
                 if(fileExtension == "png"){
                     workingFile = new PNG(file);
+                } else if(fileExtension == "jpg"){
+                    workingFile = new JPG(file);
                 } else {
                     std::cout << "Extension not currently supported." << std::endl;
                     return 0;

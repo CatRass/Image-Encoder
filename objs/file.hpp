@@ -130,4 +130,13 @@ class PNG: public File {
         }
 };
 
+class JPG: public File {
+    public:
+        JPG(std::string fileName){
+            this->fileName = fileName;
+            this->start = 1;
+            this->readFileContents();
+        }
+};
+
 #endif // FILE
